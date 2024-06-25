@@ -56,6 +56,7 @@ struct FlowLayout {
             .map(\.size)
             .reduce(.zero, breadth: max, depth: +)
             .adding(spacings, on: .vertical)
+            .extending(to: proposedSize.size(on: axis))
         return CGSize(size: size, axis: axis)
     }
 

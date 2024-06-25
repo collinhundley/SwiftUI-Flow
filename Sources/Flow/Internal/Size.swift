@@ -13,6 +13,17 @@ struct Size {
         return size
     }
 
+    func extending(to other: Size) -> Size {
+        var size = self
+        if other.breadth > size.breadth {
+            size.breadth = other.breadth
+        }
+        if other.depth > size.depth {
+            size.depth = other.depth
+        }
+        return size
+    }
+
     fileprivate subscript(axis: Axis) -> CGFloat {
         get {
             self[keyPath: keyPath(on: axis)]

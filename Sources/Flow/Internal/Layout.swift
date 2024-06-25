@@ -52,11 +52,14 @@ struct FlowLayout {
 
         let lines = calculateLayout(in: proposedSize, of: subviews)
         let spacings = lines.map(\.spacing).reduce(into: 0, +=)
-        let size = lines
+        var size = lines
             .map(\.size)
             .reduce(.zero, breadth: max, depth: +)
             .adding(spacings, on: .vertical)
-            .extending(to: proposedSize.size(on: axis))
+        if justification != nil {
+            size = size
+                .extending(to: proposedSize.replacingUnspecifiedDimensions().size(on: axis))
+        }
         return CGSize(size: size, axis: axis)
     }
 

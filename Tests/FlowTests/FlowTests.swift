@@ -6,32 +6,24 @@ import XCTest
 final class FlowTests: XCTestCase {
     func test_HFlow_size_singleElement() throws {
         // Given
-        let views = [
-            TestSubview(width: 50, height: 50)
-        ]
         let sut: FlowLayout = .horizontal(alignment: .center, itemSpacing: 10, lineSpacing: 20)
 
         // When
-        let size = sut.sizeThatFits(proposal: ProposedViewSize(width: 100, height: 100), subviews: views)
+        let size = sut.sizeThatFits(proposal: 100×100, subviews: [50×50])
 
         // Then
-        XCTAssertEqual(size, CGSize(width: 50, height: 50))
+        XCTAssertEqual(size, 50×50)
     }
 
     func test_HFlow_size_multipleElements() throws {
         // Given
-        let views = [
-            TestSubview(width: 50, height: 50),
-            TestSubview(width: 50, height: 50),
-            TestSubview(width: 50, height: 50)
-        ]
         let sut: FlowLayout = .horizontal(alignment: .center, itemSpacing: 10, lineSpacing: 20)
 
         // When
-        let size = sut.sizeThatFits(proposal: ProposedViewSize(width: 130, height: 130), subviews: views)
+        let size = sut.sizeThatFits(proposal: 130×130, subviews: repeated(50×50, times: 3))
 
         // Then
-        XCTAssertEqual(size, CGSize(width: 110, height: 120))
+        XCTAssertEqual(size, 110×120)
     }
 
     func test_HFlow_layout_top() {
@@ -99,7 +91,7 @@ final class FlowTests: XCTestCase {
         let sut: FlowLayout = .horizontal(alignment: .center, itemSpacing: 1, lineSpacing: 0)
 
         // When
-        let result = sut.layout(Array(repeating: 1×1, count: 15), in: 11×3)
+        let result = sut.layout(repeated(1×1, times: 15), in: 11×3)
 
         // Then
         XCTAssertEqual(render(result), """
@@ -172,7 +164,7 @@ final class FlowTests: XCTestCase {
         let sut: FlowLayout = .vertical(alignment: .center, itemSpacing: 0, lineSpacing: 0)
 
         // When
-        let result = sut.layout(Array(repeating: 1×1, count: 17), in: 6×3)
+        let result = sut.layout(repeated(1×1, times: 17), in: 6×3)
 
         // Then
         XCTAssertEqual(render(result), """
@@ -184,28 +176,92 @@ final class FlowTests: XCTestCase {
         """)
     }
 
-    func test_HFlow_justifiedItems() {
+    func test_HFlow_justifiedSpaces_rigid() {
+        // Given
+        let sut: FlowLayout = .horizontal(alignment: .center, itemSpacing: 1, lineSpacing: 0, justification: .stretchSpaces)
+
+        // When
+        let result = sut.layout([3×1, 3×1, 2×1], in: 9×2)
+
+        // Then
+        XCTAssertEqual(render(result), """
+        +---------+
+        |XXX   XXX|
+        |XX       |
+        +---------+
+        """)
+    }
+
+    func test_HFlow_justifiedSpaces_flexible() {
+        // Given
+        let sut: FlowLayout = .horizontal(alignment: .center, itemSpacing: 1, lineSpacing: 0, justification: .stretchSpaces)
+
+        // When
+        let result = sut.layout([3×1, 3×1...inf×1, 2×1], in: 9×2)
+
+        // Then
+        XCTAssertEqual(render(result), """
+        +---------+
+        |XXX   XXX|
+        |XX       |
+        +---------+
+        """)
+    }
+
+    func test_HFlow_justifiedItems_rigid() {
         // Given
         let sut: FlowLayout = .horizontal(alignment: .center, itemSpacing: 1, lineSpacing: 0, justification: .stretchItems)
 
         // When
-        let result = sut.layout([3×1, 3×1, 2×1], in: 9×2, flexible: true)
+        let result = sut.layout([3×1, 3×1, 2×1], in: 9×2)
+
+        // Then
+        XCTAssertEqual(render(result), """
+        +---------+
+        |XXX XXX  |
+        |XX       |
+        +---------+
+        """)
+    }
+
+    func test_HFlow_justifiedItems_flexible() {
+        // Given
+        let sut: FlowLayout = .horizontal(alignment: .center, itemSpacing: 1, lineSpacing: 0, justification: .stretchItems)
+
+        // When
+        let result = sut.layout([3×1...4×1, 3×1...inf×1, 2×1...5×1], in: 9×2)
 
         // Then
         XCTAssertEqual(render(result), """
         +---------+
         |XXXX XXXX|
-        |XXXXXXXXX|
+        |XXXXX    |
         +---------+
         """)
     }
 
-    func test_HFlow_justifiedSpaces() {
+    func test_HFlow_justifiedItemsAndSpaces_rigid() throws {
         // Given
-        let sut: FlowLayout = .horizontal(alignment: .center, itemSpacing: 1, lineSpacing: 0, justification: .stretchSpaces)
+        let sut: FlowLayout = .horizontal(alignment: .center, itemSpacing: 1, lineSpacing: 0, justification: .stretchItemsAndSpaces)
 
         // When
-        let result = sut.layout([3×1, 3×1, 2×1], in: 9×2, flexible: true)
+        let result = sut.layout([1×1, 2×1...5×1, 1×1...inf×1, 2×1], in: 10×2)
+
+        // Then
+        XCTAssertEqual(render(result), """
+        +---------+
+        |XXX   XXX|
+        |XX       |
+        +---------+
+        """)
+    }
+
+    func test_HFlow_justifiedItemsAndSpaces_flexible() throws {
+        // Given
+        let sut: FlowLayout = .horizontal(alignment: .center, itemSpacing: 1, lineSpacing: 0, justification: .stretchItemsAndSpaces)
+
+        // When
+        let result = sut.layout([1×1, 2×1...5×1, 1×1...inf×1, 2×1], in: 10×2)
 
         // Then
         XCTAssertEqual(render(result), """
@@ -217,10 +273,11 @@ final class FlowTests: XCTestCase {
     }
 }
 
+private typealias LayoutDescription = (subviews: [TestSubview], reportedSize: CGSize)
+
 @available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
 private extension FlowLayout {
-    func layout(_ views: [CGSize], in bounds: CGSize, flexible: Bool = false) -> (subviews: [TestSubview], size: CGSize) {
-        let subviews = views.map { TestSubview(width: $0.width, height: $0.height, flexible: flexible) }
+    func layout(_ subviews: [TestSubview], in bounds: CGSize) -> LayoutDescription {
         let size = sizeThatFits(
             proposal: ProposedViewSize(width: bounds.width, height: bounds.height),
             subviews: subviews
@@ -235,23 +292,27 @@ private extension FlowLayout {
 }
 
 @available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
-private func render(_ layout: (subviews: [TestSubview], size: CGSize), border: Bool = true) -> String {
+private func render(_ layout: LayoutDescription, border: Bool = true) -> String {
     struct Point: Hashable {
         let x, y: Int
     }
 
     var positions: Set<Point> = []
     for view in layout.subviews {
-        if let point = view.placement {
-            for y in Int(point.y) ..< Int(point.y + view.size.height) {
-                for x in Int(point.x) ..< Int(point.x + view.size.width) {
-                    positions.insert(Point(x: x, y: y))
+        if let placement = view.placement {
+            let point = placement.position
+            for y in Int(point.y) ..< Int(point.y + placement.size.height) {
+                for x in Int(point.x) ..< Int(point.x + placement.size.width) {
+                    let result = positions.insert(Point(x: x, y: y))
+                    precondition(result.inserted, "Boxes should not overlap")
                 }
             }
+        } else {
+            fatalError("Should be placed")
         }
     }
-    let width = Int(layout.size.width)
-    let height = Int(layout.size.height)
+    let width = Int(layout.reportedSize.width)
+    let height = Int(layout.reportedSize.height)
     var result = ""
     if border {
         result += "+" + String(repeating: "-", count: width) + "+\n"
@@ -279,35 +340,57 @@ private func render(_ layout: (subviews: [TestSubview], size: CGSize), border: B
 @available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
 private final class TestSubview: Subview, CustomStringConvertible {
     var spacing = ViewSpacing()
-    var placement: CGPoint?
-    var size: CGSize
-    var flexible: Bool
+    var priority: Double = 1
+    var placement: (position: CGPoint, size: CGSize)?
+    var minSize: CGSize
+    var idealSize: CGSize
+    var maxSize: CGSize
 
-    init(width: CGFloat, height: CGFloat, flexible: Bool = false) {
-        size = .init(width: width, height: height)
-        self.flexible = flexible
+    init(size: CGSize) {
+        minSize = size
+        idealSize = size
+        maxSize = size
+    }
+
+    init(minSize: CGSize, idealSize: CGSize, maxSize: CGSize) {
+        self.minSize = minSize
+        self.idealSize = idealSize
+        self.maxSize = maxSize
     }
 
     func sizeThatFits(_ proposal: ProposedViewSize) -> CGSize {
-        size
+        switch proposal {
+            case .zero:
+                minSize
+            case .unspecified:
+                idealSize
+            case .infinity:
+                maxSize
+            default:
+                CGSize(
+                    width: min(max(minSize.width, proposal.width ?? idealSize.width), maxSize.width),
+                    height: min(max(minSize.height, proposal.height ?? idealSize.height), maxSize.height)
+                )
+        }
     }
 
     func dimensions(_ proposal: ProposedViewSize) -> Dimensions {
-        TestDimensions(width: size.width, height: size.height)
+        let size = switch proposal {
+            case .zero:  minSize
+            case .unspecified: idealSize
+            case .infinity: maxSize
+            default: sizeThatFits(proposal)
+        }
+        return TestDimensions(width: size.width, height: size.height)
     }
 
     func place(at position: CGPoint, anchor: UnitPoint, proposal: ProposedViewSize) {
-        placement = position
-        if flexible, let width = proposal.width {
-            size.width = width
-        }
-        if flexible, let height = proposal.height {
-            size.height = height
-        }
+        let size = sizeThatFits(proposal)
+        placement = (position, size)
     }
 
     var description: String {
-        "origin: \((placement?.x).map { "\($0)" } ?? "nil")×\((placement?.y).map { "\($0)" } ?? "nil"), size: \(size.width)×\(size.height)"
+        "origin: \((placement?.position.x).map { "\($0)" } ?? "nil")×\((placement?.position.y).map { "\($0)" } ?? "nil"), size: \(idealSize.width)×\(idealSize.height)"
     }
 }
 
@@ -335,6 +418,27 @@ private struct TestDimensions: Dimensions {
 }
 
 infix operator ×: MultiplicationPrecedence
+
 private func × (lhs: CGFloat, rhs: CGFloat) -> CGSize {
     CGSize(width: lhs, height: rhs)
 }
+
+private func × (lhs: CGFloat, rhs: CGFloat) -> TestSubview {
+    .init(size: .init(width: lhs, height: rhs))
+}
+
+private func × (lhs: CGFloat, rhs: CGFloat) -> ProposedViewSize {
+    .init(width: lhs, height: rhs)
+}
+
+infix operator ...: RangeFormationPrecedence
+
+private func ... (lhs: CGSize, rhs: CGSize) -> TestSubview {
+    TestSubview(minSize: lhs, idealSize: lhs, maxSize: rhs)
+}
+
+private func repeated<T>(_ factory: @autoclosure () -> T, times: Int) -> [T] {
+    (1...times).map { _ in factory() }
+}
+
+let inf: CGFloat = .infinity
